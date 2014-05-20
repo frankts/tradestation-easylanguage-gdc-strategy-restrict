@@ -1,0 +1,62 @@
+// This is an example of how to restrict the execution of a strategy using the GDC. Please note, this is only an example.
+// You will need to customize it for your needs and test it to make sure it works as you would like it to. This example is only
+// meant to illustrate what can be accomplished using the GlobalDictionary class
+
+Using elsystem.collections;
+Using elsystem.windows.forms;
+
+vars: IntrabarPersist bool canCalculate(false), GlobalDictionary gdc(null), string uniqueID(""), Form messageForm(null), Label messageLabel(null);
+
+// Method called on AnalysisTechnique Initialized event.
+// On initialized, check for an entry in the SAMPLE_GDC_STRATEGY_RESTRICT GlobalDictionary.
+// There should only ever be one entry and it should match a running instance of this strategy. If not, you can allow the
+// strategy to calculate.
+
+method void AnalysisTechnique_Initialized( elsystem.Object sender, elsystem.InitializedEventArgs args ) 
+begin
+	uniqueID = "SAMPLE_STRATEGY_RESTRICT" + DatetoString(Computerdatetime()) + numtostr(Random( 123456789 ), 0);
+	
+	gdc = GlobalDictionary.Create(true, "SAMPLE_GDC_STRATEGY_RESTRICT");
+	
+	if gdc.Keys.Count = 0 then
+	begin
+		gdc.Add(uniqueID, "Is the only one for me!");
+		canCalculate = true;
+	end
+	else
+	begin
+		messageLabel = Label.Create("Sorry, you can only use one instance of this strategy at a time.", 100,100);
+		messageLabel.Dock = DockStyle.fill;
+	
+		messageForm = Form.Create("", 10, 30);
+		messageForm.Dock = DockStyle.top;
+		
+		messageForm.AddControl(messageLabel);
+		messageForm.Show();
+	end;
+	
+	//gdc.
+end;
+
+// Method called on AnalysisTechnique UnInitialized event.
+// When the strategy is uninitialized, make sure to remove the entry in the GDC so that another strategy
+// can calculate the next time it is applied/status is turned on.
+
+method void AnalysisTechnique_UnInitialized( elsystem.Object sender, elsystem.UnInitializedEventArgs args ) 
+begin
+
+	If gdc <> null then
+	begin
+		if gdc.Contains(uniqueID) = True then
+			gdc.Remove(uniqueID);
+	end;
+	
+end;
+
+// Here's the body of your strategy. Please note that the canCalculate condition check is surrounding the logic of
+// your strategy.
+
+if canCalculate = true then
+begin
+	Buy ( "Testing 123" ) next bar at market ;
+end;
